@@ -5,6 +5,7 @@ import os
 import requests
 import sseclient
 import textwrap
+import traceback
 
 from spinner import spinner
 from pathlib import Path
@@ -65,7 +66,7 @@ def get_api_key():
 
     return api_key
 
-def stream_chat_completion(messages, model):
+def stream_chat_completion(messages, model): # TODO use streaming
     headers = {
         'Accept': 'text/event-stream',
         'Authorization': 'Bearer ' + get_api_key()
@@ -103,13 +104,19 @@ def stream_chat_completion(messages, model):
 
 @spinner(text="Thinking...")
 def get_response(messages, model):
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        max_tokens=2000,
-        temperature=0.8,
-        top_p=1,
-    )
+    try:
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            max_tokens=2000,
+            temperature=0.8,
+            top_p=1,
+        )
+    except openai.error.InvalidRequestError:
+        if len(messages) == 1:
+            raise
+        messages.pop(0)
+        return get_response(messages, model)
 
     return response.choices[0].message['content'].strip()
 
@@ -117,7 +124,7 @@ def prompt_continuation(width, line_number, wrap_count):
     if wrap_count > 0:
         return " " * (width - 3) + "-> "
     else:
-        text = ("- %i - " % (line_number + 1)).rjust(width)
+        text = "...: ".rjust(width)
         return HTML("<strong>%s</strong>") % text
 
 def main():
@@ -147,7 +154,10 @@ def main():
                     )
 
                 except EOFError:
-                    exit()
+                    end_chat = True
+                    continue
+                except KeyboardInterrupt:
+                    continue
                 if user_input.lower() == "quit":
                     end_chat = True
                     continue
@@ -168,14 +178,9 @@ def main():
 
             messages.append({"role": "assistant", "content": assistant_response})
 
-        except openai.error.InvalidRequestError as e:
-            if "too many tokens" in str(e):
-                # Remove the oldest message from the message stack
-                messages.pop(0)
-                skip_input = True
-            else:
-                print("Error:", e)
-                end_chat = True
+        except:
+            traceback.print_exc()
+            end_chat = True
 
 if __name__ == '__main__':
     main()
