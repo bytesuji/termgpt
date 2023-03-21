@@ -66,42 +66,6 @@ def get_api_key():
 
     return api_key
 
-def stream_chat_completion(messages, model): # TODO use streaming
-    headers = {
-        'Accept': 'text/event-stream',
-        'Authorization': 'Bearer ' + get_api_key()
-    }
-
-    data = {
-      "model": model,
-      "messages": messages,
-      "max_tokens": 2000,
-      "temperature": 0.8,
-      "stream": True,
-    }
-
-    response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data, stream=True)
-    client = sseclient.SSEClient(response)
-    message = ""
-    for event in client.events():
-        if event.event == 'message':
-            try:
-                data = json.loads(event.data)
-            except:
-                pass
-            if data == '[DONE]':
-                print('done')
-                break
-            else:
-                try:
-                    token = data['choices'][0]['delta']['content']
-                    message += token
-                    print(token, end='', flush=True)
-                except:
-                    pass
-
-    return message
-
 @spinner(text="Thinking...")
 def get_response(messages, model):
     try:
@@ -127,6 +91,66 @@ def prompt_continuation(width, line_number, wrap_count):
         text = "...: ".rjust(width)
         return HTML("<strong>%s</strong>") % text
 
+# TODO
+# class TokenFormatter:
+#     def __init__(self):
+#         self.in_code_block = False
+#         self.indent_level = 0
+#         self.new_line = True
+# 
+#     def process_token(self, token):
+#         output = ""
+#         if token == "```":
+#             self.in_code_block = not self.in_code_block
+#             output += "```"
+#             if self.in_code_block:
+#                 self.indent_level = 1
+#             else:
+#                 self.indent_level = 0
+#             self.new_line = True
+#         elif self.in_code_block and self.new_line:
+#             output += "\t" * self.indent_level + token
+#             self.new_line = token.endswith("\n")
+#         else:
+#             output += token
+#             self.new_line = token.endswith("\n")
+# 
+#         return output
+
+def stream_chat_completion(messages, model):
+    headers = {'Accept': 'text/event-stream', 'Authorization': 'Bearer ' + get_api_key()}
+    data = {'model': model, 'messages': messages, 'max_tokens': 2000, 'temperature': 0.8, 'stream': True}
+    response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data, stream=True)
+    client = sseclient.SSEClient(response)
+    message = ''
+    skip_assistant_newlines = False
+    # formatter = TokenFormatter()
+
+    for event in client.events():
+        if event.event == 'message':
+            try:
+                data = json.loads(event.data)
+                if 'role' in data['choices'][0]['delta']:
+                    skip_assistant_newlines = True
+            except:
+                pass
+            if data == '[DONE]':
+                break
+            else:
+                try:
+                    token = data['choices'][0]['delta']['content']
+                    if token == '\n\n' and skip_assistant_newlines:
+                        skip_assistant_newlines = False
+                        continue
+
+                    message += token
+                    print(token, end='', flush=True)
+                    # formatted_token = formatter.process_token(token)
+                    # print(formatted_token, end='', flush=True)
+                except:
+                    pass
+    return message
+
 def main():
     parser = argparse.ArgumentParser(description="A CLI wrapper for OpenAI API with chat interface.")
     parser.add_argument(
@@ -134,6 +158,12 @@ def main():
         type=str,
         default="gpt-3.5-turbo",
         help="The model to use for the chat. Default is 'gpt-3.5-turbo'.",
+    )
+
+    parser.add_argument(
+        '--stream',
+        action="store_true",
+        help="Enable token streaming",
     )
 
     args = parser.parse_args()
@@ -169,16 +199,17 @@ def main():
                 messages.append({"role": "user", "content": user_input})
 
             # Make the API call
-            assistant_response = get_response(messages, args.model)
-            print(f"\n{format_output(assistant_response)}\n")
-            skip_input = False
-
-            # try:
-            #     assistant_response = stream_chat_completion(messages, args.model)
-            #     print()
-            #     skip_input = False
-            # except:
-            #     continue
+            try:
+                if args.stream:
+                    print()
+                    assistant_response = stream_chat_completion(messages, args.model)
+                    print('\n')
+                else:
+                    assistant_response = get_response(messages, args.model)
+                    print(f"\n{format_output(assistant_response)}\n")
+            except KeyboardInterrupt:
+                print()
+                continue
 
             messages.append({"role": "assistant", "content": assistant_response})
 
