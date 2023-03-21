@@ -89,7 +89,7 @@ def prompt_continuation(width, line_number, wrap_count):
         return " " * (width - 3) + "-> "
     else:
         text = "...: ".rjust(width)
-        return HTML("<strong>%s</strong>") % text
+        return HTML("<ansigray>%s</ansigray>") % text
 
 # TODO
 # class TokenFormatter:
