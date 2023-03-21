@@ -142,13 +142,17 @@ def main():
     messages = []
     end_chat = False
     skip_input = False
+    color = {
+        'gpt-4': 'ansigreen',
+        'gpt-3.5-turbo': 'ansicyan',
+    }[args.model]
 
     while not end_chat:
         try:
             if not skip_input:
                 try:
                     user_input = prompt(
-                        HTML("<ansigreen>termGPT> </ansigreen>"),
+                        HTML(f"<{color}>termGPT> </{color}>"),
                         multiline=True,
                         prompt_continuation=prompt_continuation
                     )
