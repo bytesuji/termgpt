@@ -126,29 +126,36 @@ def stream_chat_completion(messages, model):
     skip_assistant_newlines = False
     # formatter = TokenFormatter()
 
-    for event in client.events():
-        if event.event == 'message':
-            try:
-                data = json.loads(event.data)
-                if 'role' in data['choices'][0]['delta']:
-                    skip_assistant_newlines = True
-            except:
-                pass
-            if data == '[DONE]':
-                break
-            else:
+    try:
+        for event in client.events():
+            if event.event == 'message':
                 try:
-                    token = data['choices'][0]['delta']['content']
-                    if token == '\n\n' and skip_assistant_newlines:
-                        skip_assistant_newlines = False
-                        continue
-
-                    message += token
-                    print(token, end='', flush=True)
-                    # formatted_token = formatter.process_token(token)
-                    # print(formatted_token, end='', flush=True)
+                    data = json.loads(event.data)
+                    if 'role' in data['choices'][0]['delta']:
+                        skip_assistant_newlines = True
                 except:
                     pass
+                if data == '[DONE]':
+                    break
+                else:
+                    try:
+                        token = data['choices'][0]['delta']['content']
+                        if skip_assistant_newlines:
+                            if token == '\n\n':
+                                continue
+                            else:
+                                skip_assistant_newlines = False
+
+                        message += token
+                        print(token, end='', flush=True)
+                        # formatted_token = formatter.process_token(token)
+                        # print(formatted_token, end='', flush=True)
+                    except:
+                        pass
+
+    except KeyboardInterrupt:
+        pass
+
     return message
 
 def main():
