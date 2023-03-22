@@ -91,72 +91,39 @@ def prompt_continuation(width, line_number, wrap_count):
         text = "...: ".rjust(width)
         return HTML("<ansigray>%s</ansigray>") % text
 
-# TODO
-# class TokenFormatter:
-#     def __init__(self):
-#         self.in_code_block = False
-#         self.indent_level = 0
-#         self.new_line = True
-# 
-#     def process_token(self, token):
-#         output = ""
-#         if token == "```":
-#             self.in_code_block = not self.in_code_block
-#             output += "```"
-#             if self.in_code_block:
-#                 self.indent_level = 1
-#             else:
-#                 self.indent_level = 0
-#             self.new_line = True
-#         elif self.in_code_block and self.new_line:
-#             output += "\t" * self.indent_level + token
-#             self.new_line = token.endswith("\n")
-#         else:
-#             output += token
-#             self.new_line = token.endswith("\n")
-# 
-#         return output
+def _stream_message(client, tokens):
+    last_event_role = None
+    for event in client.events():
+        if event.event != 'message':
+            continue
+        if event.data == '[DONE]':
+            continue
+
+        data = json.loads(event.data)
+        current_event_role = data.get('choices', [{}])[0].get('delta', {}).get('role', None)
+        token = data.get('choices', [{}])[0].get('delta', {}).get('content', None)
+        if last_event_role == 'assistant' and token == '\n\n':
+            last_event_role = None
+            continue
+
+        if token:
+            tokens.append(token)
+            print(token, end='', flush=True)
+        last_event_role = current_event_role
 
 def stream_chat_completion(messages, model):
     headers = {'Accept': 'text/event-stream', 'Authorization': 'Bearer ' + get_api_key()}
     data = {'model': model, 'messages': messages, 'max_tokens': 2000, 'temperature': 0.8, 'stream': True}
     response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data, stream=True)
     client = sseclient.SSEClient(response)
-    message = ''
-    skip_assistant_newlines = False
-    # formatter = TokenFormatter()
+    tokens = []
 
     try:
-        for event in client.events():
-            if event.event == 'message':
-                try:
-                    data = json.loads(event.data)
-                    if 'role' in data['choices'][0]['delta']:
-                        skip_assistant_newlines = True
-                except:
-                    pass
-                if data == '[DONE]':
-                    break
-                else:
-                    try:
-                        token = data['choices'][0]['delta']['content']
-                        if skip_assistant_newlines:
-                            if token == '\n\n':
-                                continue
-                            else:
-                                skip_assistant_newlines = False
-
-                        message += token
-                        print(token, end='', flush=True)
-                        # formatted_token = formatter.process_token(token)
-                        # print(formatted_token, end='', flush=True)
-                    except:
-                        pass
-
+        _stream_message(client, tokens)
     except KeyboardInterrupt:
         pass
 
-    return message
+    return ''.join(tokens)
 
 def main():
     parser = argparse.ArgumentParser(description="A CLI wrapper for OpenAI API with chat interface.")
@@ -168,9 +135,9 @@ def main():
     )
 
     parser.add_argument(
-        '--stream',
+        '--syntax',
         action="store_true",
-        help="Enable token streaming",
+        help="Enable syntax highlighting",
     )
 
     args = parser.parse_args()
@@ -190,7 +157,7 @@ def main():
                 try:
                     user_input = prompt(
                         HTML(f"<{color}>termGPT> </{color}>"),
-                        multiline=True,
+                        # multiline=True,
                         prompt_continuation=prompt_continuation
                     )
 
@@ -207,13 +174,13 @@ def main():
 
             # Make the API call
             try:
-                if args.stream:
+                if args.syntax:
+                    assistant_response = get_response(messages, args.model)
+                    print(f"\n{format_output(assistant_response)}\n")
+                else:
                     print()
                     assistant_response = stream_chat_completion(messages, args.model)
                     print('\n')
-                else:
-                    assistant_response = get_response(messages, args.model)
-                    print(f"\n{format_output(assistant_response)}\n")
             except KeyboardInterrupt:
                 print()
                 continue
