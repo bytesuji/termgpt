@@ -7,6 +7,7 @@ import sseclient
 import textwrap
 import traceback
 
+from formatter import TokenFormatter
 from spinner import spinner
 from pathlib import Path
 from prompt_toolkit import prompt
@@ -91,8 +92,11 @@ def prompt_continuation(width, line_number, wrap_count):
         text = "...: ".rjust(width)
         return HTML("<ansigray>%s</ansigray>") % text
 
-def _stream_message(client, tokens):
+def _stream_message(client, tokens, use_formatter=True):
+    token_fmt = TokenFormatter()
     last_event_role = None
+    last_token = ''
+
     for event in client.events():
         if event.event != 'message':
             continue
@@ -107,8 +111,19 @@ def _stream_message(client, tokens):
             continue
 
         if token:
+            if last_token:
+                token = last_token + token
+                last_token = ''
+            if '`' in token and len(token) < 3:
+                last_token = token
+                continue
+
             tokens.append(token)
-            print(token, end='', flush=True)
+            if use_formatter:
+                token_fmt.process_token(token)
+            else:
+                print(token, end='', flush=True)
+
         last_event_role = current_event_role
 
 def stream_chat_completion(messages, model):
