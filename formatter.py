@@ -154,7 +154,7 @@ class TokenFormatter:
             delimiter_index = token.index(self.string_delimiter)
             if token[delimiter_index - 1] != '\\':
                 self.in_string = False
-                highlighted_token ='\033[1;32m' + token[:delimiter_index] +'\033[0m' + token[delimiter_index:]
+                highlighted_token ='\033[1;32m' + token[:delimiter_index+1] +'\033[0m' + token[delimiter_index+1:]
             else:
                 highlighted_token ='\033[1;32m' + token +'\033[0m'
 
@@ -165,7 +165,7 @@ class TokenFormatter:
             logging.debug(f'past = <{token[delimiter_index+1:]}>')
             logging.debug(f'hi_token = <{highlighted_token}>')
 
-        if self.in_string or self.in_comment:
+        if not set_in_string and self.in_string or self.in_comment:
             logging.debug('in the current branch')
             highlighted_token ='\033[1;32m' + token +'\033[0m'
             logging.debug(f'token = <{token}>')
