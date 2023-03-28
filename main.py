@@ -133,6 +133,12 @@ def stream_chat_completion(messages, model):
     client = sseclient.SSEClient(response)
     tokens = []
 
+    if response.status_code != 200:
+        if len(messages) == 1:
+            raise
+        messages.pop(0)
+        return stream_chat_completion(messages, model)
+
     try:
         _stream_message(client, tokens)
     except KeyboardInterrupt:

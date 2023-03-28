@@ -113,7 +113,7 @@ class TokenFormatter:
         keywords = set(['if', 'else', 'for', 'while', 'return', 'class',
             'def', 'function', 'import', 'from', 'export', 'const',
             'let', 'var', 'switch', 'case', 'try', 'catch', 'finally',
-            'break', 'continue',
+            'break', 'continue', 'with', 'as', 'in', 'match', 'case',
         ])
 
         s_token = token.strip()
@@ -170,42 +170,6 @@ class TokenFormatter:
             highlighted_token ='\033[1;32m' + token +'\033[0m'
             logging.debug(f'token = <{token}>')
             logging.debug(f'hi_token = <{highlighted_token}>')
-
-        ## VErsion 2
-        # string_start = re.compile('\"|\'')
-        # string_match = string_start.search(s_token)
-        # if string_match and not self.in_string and not self.in_comment:
-        #     self.in_string = True
-        #     self.string_delimiter = string_match[0]
-        #     delimiter_index = s_token.index(self.string_delimiter)
-        #     highlighted_token = s_token[:delimiter_index] + '\033[1;32m' + s_token[delimiter_index:] + '\033[0m'
-        #     if len(string_start.findall(s_token)) != 2:
-        #         set_in_string = True
-
-        # if not set_in_string and self.in_string and self.string_delimiter in s_token:
-        #     self.in_string = False
-        #     delimiter_index = s_token.index(self.string_delimiter)
-        #     highlighted_token = '\033[1;32m' + s_token[:delimiter_index+1] + '\033[0m' + s_token[delimiter_index+1:]
-
-        # if self.in_string or self.in_comment:
-        #     highlighted_token = '\033[1;32m' + token + '\033[0m'
-
-        ## VERSION 1
-        # string_start = re.compile('\"|\'')
-        # string_match = string_start.search(s_token)
-        # if string_match and not self.in_string and not self.in_comment:
-        #     self.in_string = True
-        #     self.string_delimiter = string_match[0]
-        #     highlighted_token = '\033[1;32m' + token + '\033[0m'
-        #     if len(string_start.findall(s_token)) != 2:
-        #         set_in_string = True
-
-        # if not set_in_string and self.in_string and self.string_delimiter in s_token:
-        #     self.in_string = False
-        #     highlighted_token = '\033[1;32m' + token + '\033[0m'
-
-        # if self.in_string or self.in_comment:
-        #     highlighted_token = '\033[1;32m' + token + '\033[0m'
 
         if s_token.isdigit() and not self.in_string and not self.in_comment:
             highlighted_token = '\033[1;31m' + token + '\033[0m'
