@@ -103,7 +103,8 @@ class TokenFormatter:
         types_and_values = set(['int', 'float', 'str', 'bool',
             'None', 'True', 'False','complex', 'tuple', 'list',
             'dict', 'set', 'frozenset', 'bytes', 'bytearray',
-            'memoryview', 'range', 'enumerate', 'len',
+            'memoryview', 'range', 'enumerate', 'len', 'print',
+            'exit',
         ])
 
         result = token in types_and_values
@@ -120,7 +121,7 @@ class TokenFormatter:
         result = token.isdigit()
         result = result and \
                 (prev.strip().isdigit() \
-                or last_char in ' ({[' \
+                or last_char in ' ({[.' \
                 or prev.strip() in self.operators)
 
         return result
