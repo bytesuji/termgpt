@@ -24,7 +24,8 @@ class TokenFormatter:
         self.last_was_tick = False
         self.prev_token = ""
 
-        self.operators = ['+', '-', '*', '/', '%', '//', '**', '==', '!=', '<', '>', '<=', '>=', '&', '|', '^', '~', '<<', '>>']
+        self.operators = ['+', '-', '*', '/', '%', '//', '**', '=', '==', '!=',
+                '<', '>', '<=', '>=', '&', '|', '^', '~', '<<', '>>']
 
     def _update_terminal_width(self):
         width, _ = shutil.get_terminal_size()
@@ -108,7 +109,15 @@ class TokenFormatter:
         ])
 
         result = token in types_and_values
-        result = result or token + '(' in types_and_values
+        if not result:
+            for op in self.operators:
+                for type_val in types_and_values:
+                    if token.startswith(op + type_val) or token.endswith(type_val + op):
+                        result = True
+                        break
+                if result:
+                    break
+
         return result
 
     def is_digit(self, token):
