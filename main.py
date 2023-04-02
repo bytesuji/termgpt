@@ -151,8 +151,8 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        default="gpt-3.5-turbo",
-        help="The model to use for the chat. Default is 'gpt-3.5-turbo'.",
+        default="gpt-4",
+        help="The model to use for the chat. Default is 'gpt-4'",
     )
 
     parser.add_argument(
