@@ -163,15 +163,19 @@ class TokenFormatter:
         string_start = re.compile('\"|\'')
         string_match = string_start.search(s_token)
         if string_match and not self.in_string and not self.in_comment:
-            self.in_string = True
-            self.string_delimiter = string_match[0]
-            delimiter_index = token.index(self.string_delimiter)
-            highlighted_token = token[:delimiter_index] + STRING_COLOR + token[delimiter_index:] + RESET
-            if len(string_start.findall(s_token)) != 2 or token[delimiter_index - 1] =='\\':
-                set_in_string = True
+            delim = string_match[0]
+            if self.prev_token[-2:] != delim * 2: # ending a multi-line string
+                self.in_string = True
+                self.string_delimiter = string_match[0]
+                delimiter_index = token.index(self.string_delimiter)
+                highlighted_token = token[:delimiter_index] + STRING_COLOR + token[delimiter_index:] + RESET
+
+                if len(string_start.findall(s_token)) != 2 or token[delimiter_index - 1] =='\\':
+                    set_in_string = True
 
         if not set_in_string and self.in_string and self.string_delimiter in s_token:
             delimiter_index = token.index(self.string_delimiter)
+
             if token[delimiter_index - 1] != '\\':
                 self.in_string = False
                 highlighted_token = STRING_COLOR + token[:delimiter_index+1] + RESET + token[delimiter_index+1:]
