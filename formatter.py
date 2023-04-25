@@ -95,7 +95,7 @@ class TokenFormatter:
             'def', 'function', 'import', 'from', 'export', 'const',
             'let', 'var', 'switch', 'case', 'try', 'catch', 'finally',
             'break', 'continue', 'with', 'as', 'in', 'match', 'case',
-            'elif',
+            'elif', 'except',
         ])
 
         return token in keywords

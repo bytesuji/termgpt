@@ -72,7 +72,7 @@ def get_response(messages, model):
     try:
         response = openai.ChatCompletion.create(
             model=model,
-            messages=messages,
+            messages=messages[-3:],
             max_tokens=2000,
             temperature=0.8,
             top_p=1,
