@@ -16,6 +16,8 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name, guess_lexer
 from pygments.formatters import TerminalFormatter
 
+SYSTEM_PROMPT = None
+
 def format_output(input_string):
     terminal_width = os.get_terminal_size().columns
     lines = input_string.split('\n')
@@ -72,7 +74,7 @@ def get_response(messages, model):
     try:
         response = openai.ChatCompletion.create(
             model=model,
-            messages=messages[-3:],
+            messages=messages[-8:],
             max_tokens=2000,
             temperature=0.8,
             top_p=1,
