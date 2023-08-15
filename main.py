@@ -153,7 +153,7 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        default="gpt-4",
+        default="gpt-4-0314",
         help="The model to use for the chat. Default is 'gpt-4'",
     )
 
@@ -170,6 +170,7 @@ def main():
     end_chat = False
     skip_input = False
     color = {
+        'gpt-4-0314': 'ansigreen',
         'gpt-4': 'ansigreen',
         'gpt-3.5-turbo': 'ansicyan',
     }[args.model]
